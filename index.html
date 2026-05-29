@@ -2553,24 +2553,23 @@ setInterval(autoSave, 120000);
   </div>
 </div>
 <script>
-// Cargar Supabase dinámicamente y luego iniciar la app
-const SUPA_URL = 'https://opbcxcwlgcbekluveprx.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wYmN4Y3dsZ2NiZWtsdXZlcHJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMjAzOTgsImV4cCI6MjA5NDc5NjM5OH0.wonQrH3siyQvebs4VZk9AOgvWyPZNubxAKObzNVtnog';
-let supa = null;
-
-async function recargarDatos() {
-  setSaveStatus('⏳ Recargando...');
-  const ok = await loadFromSupabase();
-  if (ok) {
-    renderDashboard();
-    setSaveStatus('☁️ Datos actualizados', true);
-  } else {
-    setSaveStatus('⚠️ No se pudo conectar');
+// ======== SUPABASE REST API ========
+async function supaQuery(table, method, body, params) {
+  method = method || 'GET';
+  params = params || '';
+  var url = SUPA_URL + '/rest/v1/' + table + (params ? '?' + params : '');
+  var opts = { method: method, headers: SUPA_HEADERS };
+  if (body) opts.body = JSON.stringify(body);
+  var r = await fetch(url, opts);
+  if (!r.ok) {
+    var err = await r.text();
+    throw new Error(table + ': ' + err);
   }
+  if (method === 'GET') return await r.json();
+  return true;
 }
 
-// ======== SUPABASE REST API DIRECTO (sin librería) ========
-// No necesita CDN externo - usa fetch nativo del navegador
+// ======== CONSTANTES GLOBALES DE SUPABASE ========
 const SUPA_URL = 'https://opbcxcwlgcbekluveprx.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wYmN4Y3dsZ2NiZWtsdXZlcHJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMjAzOTgsImV4cCI6MjA5NDc5NjM5OH0.wonQrH3siyQvebs4VZk9AOgvWyPZNubxAKObzNVtnog';
 const SUPA_HEADERS = {
@@ -2580,30 +2579,17 @@ const SUPA_HEADERS = {
   'Prefer': 'return=minimal'
 };
 
-async function supaQuery(table, method='GET', body=null, params='') {
-  const url = SUPA_URL + '/rest/v1/' + table + (params ? '?' + params : '');
-  const opts = { method, headers: SUPA_HEADERS };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(url, opts);
-  if (!r.ok) {
-    const err = await r.text();
-    throw new Error(table + ': ' + err);
-  }
-  if (method === 'GET') return await r.json();
-  return true;
-}
-
-// Marcar como listo inmediatamente - no hay librería que cargar
+// supaReady: true inmediatamente porque no hay librería que esperar
 let supaReady = true;
 let supaReadyCallbacks = [];
 function onSupaReady(fn) { fn(); }
 
 // Iniciar app
-setTimeout(() => {
+document.addEventListener('DOMContentLoaded', function() {
   const li = document.getElementById('login-user');
   if(li) li.focus();
   testConnection();
-}, 300);
+});
 </script>
 </body>
 </html>
